@@ -1,6 +1,8 @@
 package org.example.controller;
 
 import org.example.controller.viewobject.UserVO;
+import org.example.error.BussinessException;
+import org.example.error.EmBusinessError;
 import org.example.response.CommonReturnType;
 import org.example.service.UserService;
 import org.example.service.model.UserModel;
@@ -22,9 +24,14 @@ public class UserController {
 
     @RequestMapping("/get")
     @ResponseBody
-    public CommonReturnType getUser(@RequestParam(name="id")Integer id){
+    public CommonReturnType getUser(@RequestParam(name="id")Integer id) throws BussinessException {
         //调用service服务获取对应id的用户对象并返回给前端
         UserModel userModel = userService.getUserById(id);//不要把整个领域模型传给前端
+
+        //若获取的对应用户信息不存在，抛出业务异常
+        if(userModel==null){
+            throw new BussinessException(EmBusinessError.USER_NOT_EXIST);
+        }
 
         //将核心领域模型用户对象转化为可供UI使用的viewobject
         UserVO userVO = convertFromModel(userModel);
