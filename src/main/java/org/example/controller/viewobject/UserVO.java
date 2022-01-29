@@ -1,6 +1,6 @@
 package org.example.controller.viewobject;
 
-public class UserVO {
+public class UserVO {//前端所需要的用户模型
     private Integer id;
     private String name;
     private Byte gender;

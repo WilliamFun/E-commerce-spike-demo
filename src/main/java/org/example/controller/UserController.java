@@ -1,6 +1,7 @@
 package org.example.controller;
 
 import org.example.controller.viewobject.UserVO;
+import org.example.response.CommonReturnType;
 import org.example.service.UserService;
 import org.example.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
@@ -21,12 +22,15 @@ public class UserController {
 
     @RequestMapping("/get")
     @ResponseBody
-    public UserVO getUser(@RequestParam(name="id")Integer id){
+    public CommonReturnType getUser(@RequestParam(name="id")Integer id){
         //调用service服务获取对应id的用户对象并返回给前端
         UserModel userModel = userService.getUserById(id);//不要把整个领域模型传给前端
 
         //将核心领域模型用户对象转化为可供UI使用的viewobject
-        return convertFromModel(userModel);
+        UserVO userVO = convertFromModel(userModel);
+
+        //返回通用对象
+        return CommonReturnType.create(userVO);
     }
     private UserVO convertFromModel(UserModel userModel){//model->vo
         if(userModel==null){
