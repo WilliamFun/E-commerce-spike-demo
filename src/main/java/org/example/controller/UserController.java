@@ -8,15 +8,17 @@ import org.example.service.UserService;
 import org.example.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller("user")//Controller标记用于被Spring扫描到
 @RequestMapping("/user")//在URL上的访问路径
-public class UserController {
+public class UserController extends BaseController{
 
     @Autowired
     private UserService userService;
@@ -30,7 +32,8 @@ public class UserController {
 
         //若获取的对应用户信息不存在，抛出业务异常
         if(userModel==null){
-            throw new BussinessException(EmBusinessError.USER_NOT_EXIST);
+            throw new NullPointerException();
+            //throw new BussinessException(EmBusinessError.USER_NOT_EXIST);
         }
 
         //将核心领域模型用户对象转化为可供UI使用的viewobject
@@ -50,3 +53,4 @@ public class UserController {
     }
 
 }
+
