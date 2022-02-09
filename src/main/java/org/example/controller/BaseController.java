@@ -14,6 +14,8 @@ import java.util.Map;
 
 public class BaseController {
 
+    public static final String CONTENT_TYPE_FORMED = "application/x-www-form-urlencoded";//后端需要消费的CONTENT_TYPE名字（一般使用传统http的urlformedencoded方式）
+
     //定义exceptionhandler解决未被controller层吸收的exception
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.OK)
