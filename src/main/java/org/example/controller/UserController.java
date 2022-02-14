@@ -38,6 +38,31 @@ public class UserController extends BaseController{
     @Autowired
     private HttpServletRequest httpServletRequest;//可以满足多个用户并发使用（原理？）
 
+    //用户登录接口
+    @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})//映射到http的post请求
+    @ResponseBody
+    public CommonReturnType login(@RequestParam(name = "telphone")String telphone,
+                                  @RequestParam(name = "password")String password) throws BussinessException, NoSuchAlgorithmException {
+        //入参校验
+        if(org.apache.commons.lang3.StringUtils.isEmpty(telphone)|| org.apache.commons.lang3.StringUtils.isEmpty(password)){
+            throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
+        }
+
+
+
+        //用户登陆服务，用来校验用户登录是否合法
+        UserModel userModel = userService.validatelogin(telphone,this.EncodeByMd5(password));
+
+        //将登陆凭证加入到用户登陆成功的session内（假设单点session登录）
+        this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
+        this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
+
+        return CommonReturnType.create(null);
+
+
+
+    }
+
     //用户注册接口
     @RequestMapping(value = "/register",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})//映射到http的post请求
     @ResponseBody
