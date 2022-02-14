@@ -9,6 +9,8 @@ import org.example.error.BussinessException;
 import org.example.error.EmBusinessError;
 import org.example.service.UserService;
 import org.example.service.model.UserModel;
+import org.example.validator.ValidationResult;
+import org.example.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -23,6 +25,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserPasswordDOMapper userPasswordDOMapper;
+
+    @Autowired
+    private ValidatorImpl validator;
 
     @Override
     public UserModel getUserById(Integer id) {
@@ -45,12 +50,18 @@ public class UserServiceImpl implements UserService {
             throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }
         //数据验证
-        if(StringUtils.isEmpty(userModel.getName())
-            || userModel.getAge()==null
-            || userModel.getGender()==null
-            || StringUtils.isEmpty(userModel.getTelphone())){
-            throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
+//        if(StringUtils.isEmpty(userModel.getName())
+//            || userModel.getAge()==null
+//            || userModel.getGender()==null
+//            || StringUtils.isEmpty(userModel.getTelphone())){
+//            throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
+//        }
+        ValidationResult validationResult = validator.validate(userModel);
+        if(validationResult.isHasErrors()){
+            throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,validationResult.getErrMsg());
         }
+
+
         //存入数据(insertSelective会判断非空，若为空完全依赖数据库默认值，尽量避免数据库出现null）
         UserDO userDO = convertFromModel(userModel);
         try {
