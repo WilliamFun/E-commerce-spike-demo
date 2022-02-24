@@ -9,7 +9,7 @@ public interface ItemService {
 
     //创建商品
     ItemModel createItem(ItemModel itemModel) throws BussinessException;
-    //商品列表浏览
+    //商品列表浏览,查询所有商品信息
     List<ItemModel> listItem();
 
     //商品详情浏览

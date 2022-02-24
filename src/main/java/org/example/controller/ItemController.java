@@ -11,6 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller("item")
 @RequestMapping("/item")//在URL上的访问路径
@@ -52,6 +54,21 @@ public class ItemController extends BaseController{//尽可能使controller简�
         return CommonReturnType.create(itemVO);
     }
 
+    //商品列表浏览
+    @RequestMapping(value = "/list",method = {RequestMethod.GET})//映射到http的post请求
+    @ResponseBody
+    public CommonReturnType listItem(){
+        List<ItemModel> itemModelList = itemService.listItem();
+
+        //使用stream api 将list内的itemModel转化为itemVO java8新特性
+        List<ItemVO> itemVOList = itemModelList.stream().map(itemModel -> {
+            ItemVO itemVO = convertVOFromModel(itemModel);
+            return itemVO;
+        }).collect(Collectors.toList());
+
+        return CommonReturnType.create(itemVOList);
+
+    }
 
 
     //model到VO的转换
