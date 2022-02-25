@@ -42,7 +42,7 @@ public class UserController extends BaseController{
     @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})//映射到http的post请求
     @ResponseBody
     public CommonReturnType login(@RequestParam(name = "telphone")String telphone,
-                                  @RequestParam(name = "password")String password) throws BussinessException, NoSuchAlgorithmException {
+                                  @RequestParam(name = "password")String password,HttpServletRequest request, HttpServletResponse response) throws BussinessException, NoSuchAlgorithmException {
         //入参校验
         if(org.apache.commons.lang3.StringUtils.isEmpty(telphone)|| org.apache.commons.lang3.StringUtils.isEmpty(password)){
             throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
@@ -56,6 +56,17 @@ public class UserController extends BaseController{
         //将登陆凭证加入到用户登陆成功的session内（假设单点session登录）
         this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
         this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
+
+        //实现session共享
+        ResponseCookie cookie = ResponseCookie.from("JSESSIONID", request.getSession().getId() ) // key & value
+                .httpOnly(true)       // 禁止js读取
+                .secure(true)     // 在http下也传输
+                .domain("localhost")// 域名
+                .path("/")       // path
+                .sameSite("None")  // 大多数情况也是不发送第三方 Cookie，但是导航到目标网址的 Get 请求除外
+                .build()
+                ;
+        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return CommonReturnType.create(null);
 
