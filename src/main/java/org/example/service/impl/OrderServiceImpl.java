@@ -35,7 +35,7 @@ public class OrderServiceImpl implements OrderService {
     private SequenceDOMapper sequenceDOMapper;
 
     @Override
-    public OrderModel createOrder(Integer userId, Integer itemId, Integer amount) throws BussinessException {
+    public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId,Integer amount) throws BussinessException {
         //1、校验下单状态，下单的商品是否存在，用户是否合法，购买数量是否正确
         ItemModel itemModel = itemService.getItemById(itemId);
         if(itemModel==null){
@@ -48,6 +48,17 @@ public class OrderServiceImpl implements OrderService {
         if(amount<=0||amount>99){
             throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"数量信息不正确");
         }
+        //校验秒杀活动信息
+        if(promoId!=null){
+            //校验对应活动是否存在这个适用商品
+            if(promoId.intValue()!=itemModel.getPromoModel().getId()){
+                throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
+            }else if(itemModel.getPromoModel().getStatus().intValue()!=2){//校验活动是否进行中
+                throw new BussinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动时间不正确");
+            }
+        }
+
+
         //2、落单减库存（或支付减库存）
         boolean result = itemService.decreaseStock(itemId,amount);
         if(!result){
@@ -58,8 +69,13 @@ public class OrderServiceImpl implements OrderService {
         orderModel.setUserId(userId);
         orderModel.setItemId(itemId);
         orderModel.setAmount(amount);
-        orderModel.setItemPrice(itemModel.getPrice());
-        orderModel.setOrderPrice(itemModel.getPrice().multiply(new BigDecimal(amount)));
+        if(promoId!=null){
+            orderModel.setItemPrice(itemModel.getPromoModel().getPromoItemPrice());
+        }else{
+            orderModel.setItemPrice(itemModel.getPrice());
+        }
+        orderModel.setPromoId(promoId);
+        orderModel.setOrderPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
 
         //生成订单号
         orderModel.setId(generateOrderNo());
