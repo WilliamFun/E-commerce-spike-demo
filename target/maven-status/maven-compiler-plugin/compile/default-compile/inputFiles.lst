@@ -14,6 +14,8 @@ D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\validator\Validat
 D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\service\model\OrderModel.java
 D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\dataobject\SequenceDO.java
 D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\service\model\ItemModel.java
+D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\config\WebServerConfiguration.java
+D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\config\RedisConfig.java
 D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\controller\OrderController.java
 D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\dataobject\UserPasswordDO.java
 D:\SideProject\E-commerce-spike-demo\src\main\java\org\example\service\PromoService.java
