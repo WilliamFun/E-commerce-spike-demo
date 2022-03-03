@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.apache.commons.lang3.StringUtils;
 import org.example.error.BussinessException;
 import org.example.error.EmBusinessError;
 import org.example.response.CommonReturnType;
@@ -7,6 +8,7 @@ import org.example.service.OrderService;
 import org.example.service.model.OrderModel;
 import org.example.service.model.UserModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,8 @@ public class OrderController extends BaseController{
     private OrderService orderService;
     @Autowired
     private HttpServletRequest httpServletRequest;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     //封装下单请求
     @RequestMapping(value = "/createorder",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})//映射到http的post请求
@@ -28,11 +32,18 @@ public class OrderController extends BaseController{
                                         @RequestParam(name = "amount")Integer amount,
                                         @RequestParam(name = "promoId",required = false)Integer promoId) throws BussinessException {
         //获取用户的登录信息
-        Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
-        if(isLogin==null||isLogin.booleanValue()==false){
+        //Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
+        String token = httpServletRequest.getParameterMap().get("token")[0];
+        if(StringUtils.isEmpty(token)){
             throw new BussinessException(EmBusinessError.USER_NOT_LOGIN,"用户未登录,不能下单");
         }
-        UserModel userModel = (UserModel) httpServletRequest.getSession().getAttribute("LOGIN_USER");
+        //获取用户的登录态
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get(token);
+
+        if(userModel==null){
+            throw new BussinessException(EmBusinessError.USER_NOT_LOGIN,"用户登录超时");
+        }
+//        UserModel userModel = (UserModel) httpServletRequest.getSession().getAttribute("LOGIN_USER");
         //创建订单
         OrderModel orderModel = orderService.createOrder(userModel.getId(),itemId,promoId,amount);
 

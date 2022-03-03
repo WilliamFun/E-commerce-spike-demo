@@ -11,6 +11,7 @@ import org.example.service.UserService;
 import org.example.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -26,6 +27,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Controller("user")//Controller标记用于被Spring扫描到
 @RequestMapping("/user")//在URL上的访问路径
@@ -37,6 +40,9 @@ public class UserController extends BaseController{
 
     @Autowired
     private HttpServletRequest httpServletRequest;//可以满足多个用户并发使用（原理？）
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     //用户登录接口
     @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})//映射到http的post请求
@@ -54,21 +60,34 @@ public class UserController extends BaseController{
         UserModel userModel = userService.validatelogin(telphone,this.EncodeByMd5(password));
 
         //将登陆凭证加入到用户登陆成功的session内（假设单点session登录）
-        this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
-        this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
+        //修改成若用户登录验证成功后将对应的登录信息和登录凭证一起存入redis
 
-        //实现session共享
-        ResponseCookie cookie = ResponseCookie.from("JSESSIONID", request.getSession().getId() ) // key & value
-                .httpOnly(true)       // 禁止js读取
-                .secure(true)     // 在http下也传输
-                .domain("localhost")// 域名
-                .path("/")       // path
-                .sameSite("None")  // 大多数情况也是不发送第三方 Cookie，但是导航到目标网址的 Get 请求除外
-                .build()
-                ;
-        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return CommonReturnType.create(null);
+        //生成登录凭证token，UUID（保证用户登录凭证唯一性）
+        String uuidToken = UUID.randomUUID().toString();
+        uuidToken = uuidToken.replace("-","");
+
+        //建立token和用户登录态之间的联系
+        redisTemplate.opsForValue().set(uuidToken,userModel);
+        //设置超时时间1小时
+        redisTemplate.expire(uuidToken,1, TimeUnit.HOURS);
+
+//        this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
+//        this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
+
+        //实现给予cookie的session共享
+//        ResponseCookie cookie = ResponseCookie.from("JSESSIONID", request.getSession().getId() ) // key & value
+//                .httpOnly(true)       // 禁止js读取
+//                .secure(true)     // 在http下也传输
+//                .domain("localhost")// 域名
+//                .path("/")       // path
+//                .sameSite("None")  // 大多数情况也是不发送第三方 Cookie，但是导航到目标网址的 Get 请求除外
+//                .build()
+//                ;
+//        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        //下发token
+        return CommonReturnType.create(uuidToken);
 
 
 
