@@ -8,11 +8,13 @@ import org.example.service.model.ItemModel;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Controller("item")
@@ -22,6 +24,9 @@ public class ItemController extends BaseController{//尽可能使controller简�
 
     @Autowired
     private ItemService itemService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     //创建商品
     @RequestMapping(value = "/create",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})//映射到http的post请求
@@ -49,7 +54,22 @@ public class ItemController extends BaseController{//尽可能使controller简�
     @RequestMapping(value = "/get",method = {RequestMethod.GET})//映射到http的post请求
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
-        ItemModel itemModel = itemService.getItemById(id);
+
+        //根据商品的id到redis内获取
+        //redis获取缓存异常
+        Object obj = redisTemplate.opsForValue().get("item_"+id);
+        ItemModel itemModel = (ItemModel) obj;
+
+        //若redis内不存在对应的itemModel，则访问下游service
+        if(itemModel==null){
+            itemModel = itemService.getItemById(id);
+            //设置itemModel缓存到redis内
+            redisTemplate.opsForValue().set("item_"+id,itemModel);
+            //设置10分钟的缓存时间（有效）
+            redisTemplate.expire("item_"+id,10, TimeUnit.MINUTES);
+
+        }
+
         ItemVO itemVO = convertVOFromModel(itemModel);
 
         return CommonReturnType.create(itemVO);
