@@ -3,6 +3,7 @@ package org.example.controller;
 import org.example.controller.viewobject.ItemVO;
 import org.example.error.BussinessException;
 import org.example.response.CommonReturnType;
+import org.example.service.CacheService;
 import org.example.service.ItemService;
 import org.example.service.model.ItemModel;
 import org.joda.time.format.DateTimeFormat;
@@ -27,6 +28,9 @@ public class ItemController extends BaseController{//尽可能使controller简�
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private CacheService cacheService;
 
     //创建商品
     @RequestMapping(value = "/create",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})//映射到http的post请求
@@ -55,20 +59,32 @@ public class ItemController extends BaseController{//尽可能使controller简�
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
 
-        //根据商品的id到redis内获取
-        //redis获取缓存异常
-        Object obj = redisTemplate.opsForValue().get("item_"+id);
-        ItemModel itemModel = (ItemModel) obj;
+        ItemModel itemModel = null;
 
-        //若redis内不存在对应的itemModel，则访问下游service
+        //先取本地缓存(一级缓存)
+        itemModel = (ItemModel) cacheService.getFromCommonCache("item_"+id);
+
         if(itemModel==null){
-            itemModel = itemService.getItemById(id);
-            //设置itemModel缓存到redis内
-            redisTemplate.opsForValue().set("item_"+id,itemModel);
-            //设置10分钟的缓存时间（有效）
-            redisTemplate.expire("item_"+id,10, TimeUnit.MINUTES);
+            //根据商品的id到redis内获取(二级缓存)
+            //redis获取缓存异常
+            Object obj = redisTemplate.opsForValue().get("item_"+id);
+            itemModel = (ItemModel) obj;
 
+            //若redis内不存在对应的itemModel，则访问下游service
+            if(itemModel==null){
+                itemModel = itemService.getItemById(id);
+                //设置itemModel缓存到redis内
+                redisTemplate.opsForValue().set("item_"+id,itemModel);
+                //设置10分钟的缓存时间（有效）
+                redisTemplate.expire("item_"+id,10, TimeUnit.MINUTES);
+
+            }
+            //存入本地缓存
+            cacheService.setCommonCache("item_"+id,itemModel);
         }
+
+
+
 
         ItemVO itemVO = convertVOFromModel(itemModel);
 
